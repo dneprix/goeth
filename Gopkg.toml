@@ -1,0 +1,7 @@
+[[override]]
+  name = "github.com/ethereum/go-ethereum"
+  version = "=v1.8.16"
+
+[prune]
+  go-tests = true
+  unused-packages = true

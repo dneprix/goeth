@@ -1,0 +1,6 @@
+# Project-specific
+var/
+vendor/
+bin/
+
+Gopkg.lock
