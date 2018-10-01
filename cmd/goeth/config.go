@@ -8,15 +8,21 @@ import (
 var (
 	publicAddr = app.String(cli.StringOpt{
 		Name:   "public-addr",
-		Desc:   "Listen address for external access and public HTTP API",
+		Desc:   "Listen address for API",
 		EnvVar: "GOETH_PUBLIC_ADDR",
 		Value:  "0.0.0.0:8090",
 	})
-	rpcEthNode = app.String(cli.StringOpt{
-		Name:   "rpc-eth-node",
-		Desc:   "RPC ethereum node address",
-		EnvVar: "GOETH_RPC_ETH_NODE",
-		Value:  "http://0.0.0.0:8545",
+	ipcPath = app.String(cli.StringOpt{
+		Name:   "i ipc-path",
+		Desc:   "IPC socket path for ethereum geth node",
+		EnvVar: "GOETH_IPC_PATH",
+		Value:  "",
+	})
+	historyBlocks = app.Int(cli.IntOpt{
+		Name:   "l load-history",
+		Desc:   "Number blocks in the past for loading transaction history",
+		EnvVar: "GOETH_LOAD_HISTORY",
+		Value:  100,
 	})
 )
 
@@ -51,5 +57,11 @@ var (
 		Desc:   "Server DB name",
 		EnvVar: "GOETH_DB_NAME",
 		Value:  "goeth",
+	})
+	dbReset = app.Bool(cli.BoolOpt{
+		Name:   "db-reset",
+		Desc:   "Remove db data before start service",
+		EnvVar: "GOETH_DB_RESET",
+		Value:  false,
 	})
 )

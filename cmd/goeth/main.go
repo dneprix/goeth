@@ -2,14 +2,12 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/dneprix/goeth"
-	"github.com/dneprix/goeth/model"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/gin-gonic/gin"
 	"github.com/jawher/mow.cli"
+	log "github.com/sirupsen/logrus"
 )
 
 var app = cli.App("goeth", "A service for handling ETH wallets")
@@ -24,26 +22,37 @@ func main() {
 func appMain() {
 	db, err := dbNew(*dbHost, *dbPort, *dbUser, *dbPassword, *dbName)
 	if err != nil {
-		err = fmt.Errorf("[ERR] failed to connect DB: %v", err)
+		err = fmt.Errorf("failed to connect DB: %v", err)
 		log.Fatalln(err)
 	}
-	db.AutoMigrate(&model.Wallet{}, &model.Transactions{})
+	migrations(db)
 
-	client, err := ethclient.Dial(*rpcEthNode)
+	client, err := goeth.NewClient(*ipcPath)
 	if err != nil {
-		log.Fatalln("[ERR] failed to connect RPC node:", err)
+		log.Fatalln("failed to connect IPC socket:", err)
 	}
 
 	svc, err := goeth.NewService(db, client)
 	if err != nil {
-		log.Fatalln("[ERR] failed to init service:", err)
+		log.Fatalln("failed to init service:", err)
 	}
 
-	svc.SyncWallets()
+	err = svc.LoadAccounts()
+	if err != nil {
+		log.Fatalln("failed to add accounts:", err)
+	}
+
+	if *historyBlocks > 0 {
+		log.Infof("load history form last %v blocks. Please wait", *historyBlocks)
+		svc.LoadHistoryBlocks(*historyBlocks)
+	}
+	svc.LoadLast()
+	go svc.LoadBalances()
+	go svc.LoadNewBlocks()
 
 	r := gin.Default()
-	SetHandlers(r, svc)
+	setHandlers(r, svc)
 	if err := r.Run(*publicAddr); err != nil {
-		log.Fatalln("[ERR] HTTP server:", err)
+		log.Fatalln("HTTP server error:", err)
 	}
 }

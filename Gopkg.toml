@@ -1,6 +1,6 @@
 [[override]]
   name = "github.com/ethereum/go-ethereum"
-  version = "=v1.8.16"
+  version = "=v1.8.17"
 
 [prune]
   go-tests = true
