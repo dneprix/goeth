@@ -8,14 +8,14 @@ import (
 
 type Last interface {
 	View() []*model.Transaction
-	Sync(tx *model.Transaction)
 	Load(accounts []common.Address)
 }
 
 type last struct {
-	db       *gorm.DB
-	list     []*model.Transaction
-	accounts []common.Address
+	db           *gorm.DB
+	list         []*model.Transaction
+	accounts     []common.Address
+	saveChangesC chan *model.Transaction
 }
 
 func NewLast(db *gorm.DB) Last {
@@ -25,13 +25,12 @@ func NewLast(db *gorm.DB) Last {
 }
 
 func (l *last) View() []*model.Transaction {
-
+	defer func() {
+		for _, tx := range l.list {
+			tx.View = true
+		}
+	}()
 	return l.list
-}
-
-func (l *last) Sync(tx *model.Transaction) {
-
-	return
 }
 
 func (l *last) Load(accounts []common.Address) {
@@ -42,4 +41,21 @@ func (l *last) Load(accounts []common.Address) {
 		model.TX_CONFIRM_MIN,
 		false,
 	).Find(&l.list)
+	go l.saveChanges()
+}
+
+func (l *last) saveChanges() {
+	for {
+		select {
+		case tx, ok := <-l.saveChangesC:
+			if !ok {
+				return
+			} else if tx == nil {
+				continue
+			}
+
+			l.db.Save(tx)
+		}
+	}
+	return
 }
