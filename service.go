@@ -89,10 +89,6 @@ func (s *service) LoadAccounts() error {
 }
 
 func (s *service) processAccount(addr common.Address) error {
-	s.accounts[addr] = "410b410b"
-	s.client.CheckPassphrase(addr, s.accounts[addr])
-	return nil
-
 	var answer string
 	fmt.Printf("\nDo you want to add %v account? (y/N): ", addr.String())
 	if _, err := fmt.Scan(&answer); err != nil {
@@ -126,7 +122,7 @@ func (s *service) LoadBalances() {
 	for addr, _ := range s.accounts {
 		balance, err := s.client.BalanceAt(addr)
 		if err != nil {
-			log.Errorf("%v balance:", addr.String(), err)
+			log.Errorf("%v balance fail: %s", addr.String(), err)
 			continue
 		}
 		s.db.Model(&model.Account{Address: addr}).
@@ -167,7 +163,7 @@ func (s *service) LoadNewBlocks() {
 func (s *service) LoadHistoryBlocks(num int) {
 	lastBlock, err := s.client.BlockByNumber(nil)
 	if err != nil {
-		log.Warnln("load history error: get last block: %v", err)
+		log.Warnf("load history error: get last block: %v", err)
 		return
 	}
 	bar := pb.StartNew(num)
